@@ -12,7 +12,7 @@ if ! which sudo > /dev/null; then
 fi
 
 dir_nextcloud="/var/www/nextcloud/"
-dir_nextcloud_bak="/root/nextcloud-bk"
+dir_nextcloud_bak="/root/nextcloud-bk/"
 dir_temp=$(mktemp -u)
 date_time="$(date +%Y%m%d)"
 
