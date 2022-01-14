@@ -1,5 +1,15 @@
 #!/bin/bash
 
+##############################################################################################
+#       
+#       Actualizador contenedor Nextcloud
+#
+#       Uso: copiar enlace de descarga de la nueva actualización y pasarla como parámetro
+#            ./nextcloud-update.sh [url]
+#
+##############################################################################################
+
+
 # Comprobar que se ejecuta con privilegios root
 ! [ "$(id -u)" -eq 0 ] && echo "Error: Se necesita privilegios root" && exit 1
 
@@ -25,7 +35,7 @@ if [ -n "$1" ]; then
         nextcloud_update_url="$1"
 else
         echo "Error: Introducir url de descarga nueva version nextcloud"
-        echo "Uso: $(basename "$0") url"
+        echo "Uso: $(basename "$0") [url]"
         exit 2
 fi
 
