@@ -45,7 +45,7 @@ fi
 
 
 echo -ne "\t[+] Iniciando copia de seguridad del directorio y la base de datos\n"
-if ! rsync -Aavx /var/www/nextcloud/ "$dir_nextcloud_bak/nextcloud-dirbkp_$date_time/"; then
+if ! rsync -Aavx "$dir_nextcloud" "$dir_nextcloud_bak/nextcloud-dirbkp_$date_time/"; then
         check_error "Error durante realizacion de la copia de seguridad del directorio nextcloud"
 fi
 
