@@ -39,7 +39,7 @@ function check_error(){
 
 
 echo -ne "\t[+] Iniciando el modo mantenimiento de la web\n"
-if ! cd "$dir_nextcloud" && sudo -u www-data php occ maintenance:mode --on; then
+if ! (cd "$dir_nextcloud" && sudo -u www-data php occ maintenance:mode --on); then
         check_error "Error en la inicializacion del modo mantenimiento"
 fi
 
@@ -103,8 +103,7 @@ fi
 
 
 echo -ne "\t[+] Iniciando upgrade\n"
-cd "$dir_nextcloud"
-if ! sudo -u www-data php occ upgrade; then
+if ! (cd "$dir_nextcloud" && sudo -u www-data php occ upgrade); then
         check_error "No se puede lanzar la actualizacion"
 fi
 
