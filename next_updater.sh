@@ -148,7 +148,6 @@ if [ ! "$domain" ]; then
 fi
 
 
-# TODO check if curl exits before
 output_curl="$(curl -k -u "${admin_user}:${admin_pass}" -H 'X-Requested-With:XMLHttpRequest' https://${domain}/index.php/settings/admin/overview 2>/dev/null)"
 [[ "$output_curl" =~ '{"message":' ]] && error_info "Error login. Bad credentials" 7
 
