@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# Cuando pregunte por password, indicar de que usuario(Admin o adminer) y servicio(nextcloud o mysql)
-# añadir salto de linea al principio de los \t[+] -> \n\t[+]
 
 #===============================================================================
 #  COLORS AND TEXT
