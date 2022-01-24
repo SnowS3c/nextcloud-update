@@ -133,13 +133,13 @@ echo "Script for update nextcloud service"
 echo "Checking if new update exists..."
 
 if [ ! "$admin_user" ]; then
-	read -p"Enter admin username: " admin_user
+	read -p"Enter nextcloud admin username: " admin_user
 	[ ! "$admin_user" ] && error_info "Username can't be empty"	4
 fi
 
 if [ ! "$admin_pass" ]; then
 	cursor_hide
-	read -s -p$'Enter the password:\n' admin_pass
+	read -s -p$"Enter password for nextcloud user $admin_user:"$'\n' admin_pass
 	cursor_show
 	[ ! "$admin_pass" ] && error_info "Password can't be empty" 5
 fi
@@ -184,9 +184,17 @@ echo -ne "\n\t\t[+] Starting web maintenance mode\n"
 echo -ne "\n\t\t[+] Starting nextcloud folder backup and database\n"
 ! rsync -Aavx "$dir_nextcloud" "$dir_nextcloud_bak/nextcloud-dirbkp_$date_time/" &>/dev/null && error_info "[-] Error: Cannot finish nextcloud backup" 1
 
-read -p$'\t\t\t[*] Enter username of the database: ' user_database
-# ask for password for the database and save it into a variable
-! mysqldump --single-transaction -h localhost -u"$user_database" -p nextcloud > "$dir_nextcloud_bak/nextcloud-sqlbkp_$date_time.bak" && error_info "[-] Error: Cannot finish database backup" 1
+if [ ! "$user_database" ]; then
+	read -p$'\t\t\t[*] Enter username of the database: ' user_database
+	[ ! "$user_database" ] && error_info "Username can't be empty" 6
+fi
+if [ ! "$user_database_pass" ]; then
+	cursor_hide
+	read -s -p$"Enter password for database user $user_database:"$'\n' user_database_pass
+	cursor_show
+	[ ! "$user_database_pass" ] && error_info "Password can't be empty" 5
+fi
+! mysqldump --single-transaction -h localhost -u"$user_database" -p"$user_database_pass" nextcloud > "$dir_nextcloud_bak/nextcloud-sqlbkp_$date_time.bak" && error_info "[-] Error: Cannot finish database backup" 1
 
 
 echo -en "\n\t\t[+] Downloading new update and extracting\n"
@@ -229,8 +237,7 @@ read -p$'\n\t\t[*] INFO: Uncomment cron jobs (Press enter to continue)'
 crontab -u www-data -e
 
 echo -en "\n\t\t[+] Stoping web maintenance mode\n"
-sed "s/\('maintenance' => \)true/\1false/" "$dir_nextcloud/config/config.php"
+! sed -i "s/\('maintenance' => \)true/\1false/" "$dir_nextcloud/config/config.php" && error_info "Error: Stop maintenance mode manually setting maintenance parameter to false in config.php"
 
 
 echo -en "\n\t[*] UPDATE FINISH\n"
-echo -en "\t[*] INFO: Check config.php, maintenance variable set to false\n"
