@@ -7,7 +7,7 @@
 #  DESCRIPTION: Update nextcloud service
 #
 #       AUTHOR: Antonio Sánchez (aslopez110@gmail.com)
-#			 LICENSE: GNU General Public License v3.0
+#      LICENSE: GNU General Public License v3.0
 #      VERSION: 2022.01
 #      CREATED: 24.01.2022
 #  
