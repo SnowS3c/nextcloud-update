@@ -128,22 +128,15 @@ function error_info() {
 #  PACKAGES: curl, sudo, unzip
 #===================================================================================
 function check_dependencies(){
-	# array + instalando dependencias
-	if ! which curl > /dev/null; then
-			echo -en "\t[+] Curl package not found. Installing...\n"
-			apt update &>/dev/null
-			apt install -y curl
-	fi
-	if ! which sudo > /dev/null; then
-			echo -en "\t[+] Sudo package not found. Installing...\n"
-			apt update &>/dev/null
-			apt install -y sudo
-	fi
-	if ! which unzip > /dev/null; then
-			echo -en "\t[+] Unzip package not found. Installing...\n"
-			apt update &>/dev/null
-			apt install -y unzip
-	fi
+	echo -e "${C_Y}[*]${C_D} Checking dependencies..."
+	for package in "$@"; do
+			if ! which "$package" > /dev/null; then
+					echo -en "\t${C_G}[+]${C_D} $package package not found. Installing...\n"
+					apt update &>/dev/null
+					apt install -y "$package"
+			fi
+	done
+	echo -e "${C_Y}[*]${C_D} Done"
 }
 
 #===============================================================================
@@ -154,7 +147,7 @@ function check_dependencies(){
 [ "$(id -u)" -ne 0 ] && error_info "Administrative privileges needed" 1
 
 # Check dependencies
-check_dependencies || error_info "Cannot install packages dependencies" 2
+check_dependencies curl sudo unzip || error_info "Cannot install packages dependencies" 2
 
 
 clear
