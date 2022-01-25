@@ -1,30 +1,17 @@
 #!/usr/bin/env bash
 #===================================================================================
 # NEXTCLOUD UPDATER
-#         FILE: nextcloud_updater.sh
-#        USAGE: ./nextcloud_updater.sh
+#         FILE: nextcloud-updater.sh
+#        USAGE: ./nextcloud-updater.sh
 #
 #  DESCRIPTION: Update nextcloud service
 #
 #       AUTHOR: Antonio Sánchez (aslopez110@gmail.com)
-#	   LICENSE: GNU General Public License v3.0
+#			 LICENSE: GNU General Public License v3.0
 #      VERSION: 2022.01
 #      CREATED: 24.01.2022
-#
-#  CONFIG FILE nextcloud_updater.conf
-#  admin_user
-#  admin_pass
-#  domain
-#  user_database
-#  user_database_pass
 #  
 #=================================================================================== 
-
-#=================================================================================== 
-# 
-#
-#=================================================================================== 
-
 
 #===============================================================================
 #  COLORS AND TEXT
@@ -109,6 +96,14 @@ banner=" ██████   █████                       ████
              ░░░░░                                                                         "
 
 
+#=== PARAMETERS=====================================================================
+domain=
+admin_user=
+admin_pass=
+user_database=
+user_database_pass=
+#===================================================================================
+
 #=== FUNCTION ======================================================================
 # NAME: error_info
 # DESCRIPTION: echo error message and exit if exit code is supplied
@@ -120,22 +115,10 @@ banner=" ██████   █████                       ████
 function error_info() {
 	local msg="$1"
 	local code="$2"
-	echo -e "$msg" 1>&2
+	echo -e "${C_R}$msg${C_D}" 1>&2
 	[ "$code" ] && [ "$code" -ne 0 ] &>/dev/null && exit $code
 }
 
-
-#=== FUNCTION ======================================================================
-#  NAME: load_config
-#  DESCRIPTION: load all variables founded in the config file
-#
-#===================================================================================
-function load_config() {
-	config_file="./next_updater.conf"
-	if [ -f "$config_file" ]; then
-		source "$config_file"
-	fi
-}
 
 
 #=== FUNCTION ======================================================================
@@ -145,6 +128,7 @@ function load_config() {
 #  PACKAGES: curl, sudo, unzip
 #===================================================================================
 function check_dependencies(){
+	# array + instalando dependencias
 	if ! which curl > /dev/null; then
 			echo -en "\t[+] Curl package not found. Installing...\n"
 			apt update &>/dev/null
@@ -166,50 +150,48 @@ function check_dependencies(){
 #  MAIN PROGRAM
 #===============================================================================
 
-echo "$banner"
-
 # Check root privileges
 [ "$(id -u)" -ne 0 ] && error_info "Administrative privileges needed" 1
 
 # Check dependencies
 check_dependencies || error_info "Cannot install packages dependencies" 2
 
-# Load config file
-load_config || error_info "Cannot load config file" 3
 
 clear
+echo "$banner"
 echo "Script for update nextcloud service"
-echo "Checking if new update exists..."
 
-if [ ! "$admin_user" ]; then
+
+if [ -z "$admin_user" ]; then
 	read -p"Enter nextcloud admin username: " admin_user
-	[ ! "$admin_user" ] && error_info "Username can't be empty"	4
+	[ -z "$admin_user" ] && error_info "Username can't be empty"	4
 fi
 
-if [ ! "$admin_pass" ]; then
+if [ -z "$admin_pass" ]; then
 	cursor_hide
 	read -s -p$"Enter password for nextcloud user $admin_user:"$'\n' admin_pass
 	cursor_show
-	[ ! "$admin_pass" ] && error_info "Password can't be empty" 5
+	[ -z "$admin_pass" ] && error_info "Password can't be empty" 5
 fi
 
-if [ ! "$domain" ]; then
+if [ -z "$domain" ]; then
 	read -p"Enter domain/ip of the website: " domain
-	[ ! "$domain" ] && error_info "Domain/ip can't be empty" 6
+	[ -z "$domain" ] && error_info "Domain/ip can't be empty" 6
 fi
 
-
+echo -en "\t${C_G}[*]${C_D} Checking if new update exists... "
 output_curl="$(curl -k -u "${admin_user}:${admin_pass}" -H 'X-Requested-With:XMLHttpRequest' https://${domain}/index.php/settings/admin/overview 2>/dev/null)"
 [[ "$output_curl" =~ '{"message":' ]] && error_info "Error login. Bad credentials" 7
 
 if update_notification="$(echo "$output_curl" | grep '<div id="updatenotification" ')"; then
 	if echo "$output_curl" | grep 'isNewVersionAvailable&quot;:true' &>/dev/null; then
-		echo "New Version available"
+		echo -e "${C_G}New Version available${C_D}"
 	elif echo "$output_curl" | grep 'isNewVersionAvailable&quot;:false' &>/dev/null; then
-		echo "Nextcloud is updated"
+		echo -e "${C_G}Nextcloud is updated${C_D}"
 		exit 0
 	fi
 fi
+
 
 # Searching new version.
 ! new_version_url="$(echo "$output_curl" | grep '<div id="updatenotification"' | sed 's/&quot/ /g' | cut -d" " -f 42 | tr -d '[\\;]' | grep -E "^https://download.nextcloud.com/.*.zip$")" && error_info "Error: Bad url for download new version of nextcloud" 5
@@ -224,68 +206,68 @@ date_time="$(date +%Y%m%d)"
 [ ! -d "$dir_temp" ] && mkdir "$dir_temp"
 [ ! -d "$dir_nextcloud_bak" ] && mkdir "$dir_nextcloud_bak"
 
-echo -ne "\t[*] STARTING UPDATE\n"
-echo -ne "\t\t[+] Starting web maintenance mode\n"
+echo -ne "\t${C_G}[*] STARTING UPDATE${C_D}\n"
+echo -ne "\t\t${C_G}[+]${C_D} Starting web maintenance mode\n"
 ! (cd "$dir_nextcloud" && sudo -u www-data php occ maintenance:mode --on) && error_info "[-] Error: Cannot start web maintenance mode" 1
 
 
-echo -ne "\n\t\t[+] Starting nextcloud folder backup and database\n"
+echo -ne "\n\t\t${C_G}[+]${C_D} Starting nextcloud folder backup and database\n"
 ! rsync -Aavx "$dir_nextcloud" "$dir_nextcloud_bak/nextcloud-dirbkp_$date_time/" &>/dev/null && error_info "[-] Error: Cannot finish nextcloud backup" 1
 
-if [ ! "$user_database" ]; then
-	read -p$'\t\t\t[*] Enter username of the database: ' user_database
-	[ ! "$user_database" ] && error_info "Username can't be empty" 6
+if [ -z "$user_database" ]; then
+	read -p "$(echo -e "\t\t\t${C_Y}[*]${C_D} Enter username of the database: ")" user_database
+	[ -z "$user_database" ] && error_info "Username can't be empty" 6
 fi
-if [ ! "$user_database_pass" ]; then
+if [ -z "$user_database_pass" ]; then
 	cursor_hide
-	read -s -p$"Enter password for database user $user_database:"$'\n' user_database_pass
+	read -s -p "$(echo -e "\t\t\t${C_Y}[*]${C_D} Enter password for database user $user_database:\n")" user_database_pass
 	cursor_show
-	[ ! "$user_database_pass" ] && error_info "Password can't be empty" 5
+	[ -z "$user_database_pass" ] && error_info "Password can't be empty" 5
 fi
 ! mysqldump --single-transaction -h localhost -u"$user_database" -p"$user_database_pass" nextcloud > "$dir_nextcloud_bak/nextcloud-sqlbkp_$date_time.bak" && error_info "[-] Error: Cannot finish database backup" 1
 
 
-echo -en "\n\t\t[+] Downloading new update and extracting\n"
+echo -en "\n\t\t${C_G}[+]${C_D} Downloading new update and extracting\n"
 ! wget "$new_version_url" -O "$dir_temp/nextcloud.zip" && error_info "[-] Error: Update download failed" 1
 ! unzip "$dir_temp/nextcloud.zip" -d "$dir_temp/" &>/dev/null && error_info "[-] Error: Extracting failed" 1
 
 
-echo -en "\n\t\t[+] Stopping apache2 service...\n"
+echo -en "\n\t\t${C_G}[+]${C_D} Stopping apache2 service...\n"
 ! service apache2 stop && error_info "Error: Cannot stop apache2 service" 1
 
 
-read -p$'\n\t\t[*] INFO: You should comment cron jobs (Press enter to continue)'
+read -p "$(echo -e "\n\t\t${C_Y}[*] INFO${C_D}: You should comment cron jobs (Press enter to continue)")"
 crontab -u www-data -e
 
 
-echo -en "\n\t\t[+] Replacing the old folder for the new one\n"
+echo -en "\n\t\t${C_G}[+]${C_D} Replacing the old folder for the new one\n"
 ! mv -v "$dir_nextcloud" "/var/www/nextcloud-old" && error_info "[-] Error: Cannot move current nextcloud folder" 1
 ! mv -v "$dir_temp/nextcloud/" "$dir_nextcloud" && error_info "[-] Error: Cannot move updated folder into nextcloud folder" 1
 
 
-echo -en "\n\t\t[+] Copying previous configuration\n"
+echo -en "\n\t\t${C_G}[+]${C_D} Copying previous configuration\n"
 ! cp -v "$dir_nextcloud_bak/nextcloud-dirbkp_$date_time/config/config.php" "$dir_nextcloud/config/config.php" && error_info "Error: Cannot copy config.php file into new installation" 1
 ! cp -vr "$dir_nextcloud_bak/nextcloud-dirbkp_$date_time/data/" "$dir_nextcloud/data/" && error_info "Error: Cannot copy data folder into new installation" 1
 
 
-echo -en "\n\t\t[+] Adjust file ownership and permissions\n"
+echo -en "\n\t\t${C_G}[+]${C_D} Adjust file ownership and permissions\n"
 chown -R www-data:www-data "$dir_nextcloud"
 find "$dir_nextcloud" -type d -exec chmod 750 {} \;
 find "$dir_nextcloud" -type f -exec chmod 640 {} \;
 
 
-echo -en "\n\t\t[+] Starting apache2 service\n"
+echo -en "\n\t\t${C_G}[+]${C_D} Starting apache2 service\n"
 ! service apache2 restart && error_info "Error: Cannot start apache2 service" 1
 
 
-echo -en "\n\t\t[+] Starting upgrade\n"
+echo -en "\n\t\t${C_G}[+]${C_D} Starting upgrade\n"
 ! (cd "$dir_nextcloud" && sudo -u www-data php occ upgrade) && error_info "Error: Cannot launch upgrade" 1
 
-read -p$'\n\t\t[*] INFO: Uncomment cron jobs (Press enter to continue)'
+read -p "$(echo -e "\n\t\t${C_Y}[*] INFO${C_D}: Uncomment cron jobs (Press enter to continue)")"
 crontab -u www-data -e
 
-echo -en "\n\t\t[+] Stoping web maintenance mode\n"
+echo -en "\n\t\t${C_G}[+]${C_D} Stoping web maintenance mode\n"
 ! sed -i "s/\('maintenance' => \)true/\1false/" "$dir_nextcloud/config/config.php" && error_info "Error: Stop maintenance mode manually setting maintenance parameter to false in config.php"
 
 
-echo -en "\n\t[*] UPDATE FINISH\n"
+echo -en "\n\t${C_G}[*] UPDATE FINISH${C_D}\n"
