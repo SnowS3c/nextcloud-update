@@ -195,7 +195,7 @@ dir_nextcloud_bak="/root/nextcloud-bk/"
 dir_temp=$(mktemp -u)
 date_time="$(date +%Y%m%d)"
 
-# Comprobar si existen las rutas
+
 [ ! -d "$dir_temp" ] && mkdir "$dir_temp"
 [ ! -d "$dir_nextcloud_bak" ] && mkdir "$dir_nextcloud_bak"
 
